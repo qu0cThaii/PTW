@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PTW & LOTO – Observation Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f5f2;--surface:#ffffff;--ink:#17211d;--muted:#5f6c66;--line:#dde2dd;--soft:#eef1ed;
+  --accent:#0f6b54;--accent-ink:#ffffff;--accent-soft:#dff0ea;
+  --good:#187a4b;--good-soft:#e0f2e8;--bad:#b42318;--bad-soft:#fde8e6;--warn:#a15c07;--warn-soft:#fdf0d9;
+  --plan:#d6dcd7;--shadow:0 1px 2px rgba(20,30,25,.06),0 4px 14px rgba(20,30,25,.05);
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111614;--surface:#1a211e;--ink:#e8eee9;--muted:#98a59d;--line:#2c3631;--soft:#222b27;
+    --accent:#3fb994;--accent-ink:#06231a;--accent-soft:#1c3a2f;
+    --good:#4fc98a;--good-soft:#1b3427;--bad:#f18277;--bad-soft:#3d1e1b;--warn:#e8a94b;--warn-soft:#3a2c12;
+    --plan:#34403a;--shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111614;--surface:#1a211e;--ink:#e8eee9;--muted:#98a59d;--line:#2c3631;--soft:#222b27;
+  --accent:#3fb994;--accent-ink:#06231a;--accent-soft:#1c3a2f;
+  --good:#4fc98a;--good-soft:#1b3427;--bad:#f18277;--bad-soft:#3d1e1b;--warn:#e8a94b;--warn-soft:#3a2c12;
+  --plan:#34403a;--shadow:none;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;height:auto;min-height:100%;background:var(--bg);color:var(--ink);font:14.5px/1.5 'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 96px}
+header.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 0 10px}
+header.top h1{font-size:18px;margin:0;font-weight:600;letter-spacing:-.01em}
+header.top .sub{color:var(--muted);font-size:12.5px}
+.grow{flex:1}
+.save-st{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+nav.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;margin-bottom:18px}
+nav.tabs button{background:none;border:0;padding:10px 14px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+nav.tabs button:hover{color:var(--ink)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.pad{padding:16px}
+h2{font-size:15px;margin:0 0 4px;font-weight:600}
+h3{font-size:14px;margin:0 0 10px;font-weight:600}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:8px 13px;border-radius:9px;cursor:pointer;font-weight:500;line-height:1.2}
+.btn:hover{background:var(--soft)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:5px 9px;font-size:12.5px;border-radius:7px}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{resize:vertical;min-height:64px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:500}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.bar-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.bar-row input,.bar-row select{width:auto;min-width:0}
+.bar-row input[type=search]{flex:1;min-width:160px}
+.stat{padding:14px 16px}
+.stat .k{font-size:12px;color:var(--muted);font-weight:500}
+.stat .v{font-size:26px;font-weight:600;letter-spacing:-.02em;margin-top:2px}
+.stat .v small{font-size:14px;color:var(--muted);font-weight:500}
+.stat .s{font-size:12px;color:var(--muted)}
+.tw{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:12px;color:var(--muted);text-align:left;font-weight:500;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--soft)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.num,.tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl tfoot td{font-weight:600;background:var(--soft)}
+.tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--soft);white-space:nowrap;font-weight:500}
+.tag.good{background:var(--good-soft);color:var(--good)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.pb{height:7px;background:var(--soft);border-radius:9px;overflow:hidden;min-width:70px}
+.pb i{display:block;height:100%;background:var(--accent);border-radius:9px}
+.pb i.full{background:var(--good)}
+.tbl input.cell{padding:5px 7px;border-radius:6px;min-width:64px}
+.tbl input.rm{min-width:150px}
+.acts{display:flex;gap:6px;white-space:nowrap}
+/* audit form */
+.chk{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;margin-bottom:10px}
+.chk.r-yes{border-left:4px solid var(--good)}
+.chk.r-no{border-left:4px solid var(--bad);background:linear-gradient(0deg,var(--surface),var(--surface))}
+.chk.r-na{border-left:4px solid var(--muted)}
+.chk.err{outline:2px solid var(--bad)}
+.chk-top{display:flex;gap:12px;align-items:center}
+.chk .num{font:500 13px 'IBM Plex Mono',ui-monospace,monospace;color:var(--muted);min-width:22px}
+.chk .txt{flex:1}
+.chk .en{font-weight:500}
+.chk .vi{color:var(--muted);font-size:12.5px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-shrink:0}
+.seg button{background:var(--surface);border:0;padding:8px 14px;cursor:pointer;font-weight:500;color:var(--muted);border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on.yes{background:var(--good);color:#fff}
+.seg button.on.no{background:var(--bad);color:#fff}
+.seg button.on.na{background:var(--muted);color:var(--surface)}
+.detail{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.photos .ph{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--line);cursor:pointer}
+.photos .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.photos .ph b{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;width:18px;height:18px;border-radius:50%;font-size:12px;line-height:18px;text-align:center;font-weight:500}
+.sticky{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);z-index:20}
+.sticky .in{max-width:1180px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+/* modal & toast */
+#modal{position:fixed;inset:0;background:rgba(10,15,12,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+#modal.on{display:flex}
+#modal .box{background:var(--surface);border-radius:14px;max-width:560px;width:100%;max-height:90%;overflow:auto;padding:20px;border:1px solid var(--line)}
+#modal .box.wide{max-width:760px}
+#modal .box img.big{max-width:100%;display:block;border-radius:8px}
+.fld{margin-bottom:12px}
+.row-btn{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+#toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:60;max-width:90%;text-align:center}
+#toast.on{opacity:1}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.empty{padding:34px;text-align:center;color:var(--muted)}
+@media (max-width:860px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}}
+@media (max-width:760px){
+  .g2,.g3{grid-template-columns:1fr}
+  .chk-top{flex-wrap:wrap}.seg{width:100%}.seg button{flex:1}
+  table.resp thead{display:none}
+  table.resp,table.resp tbody,table.resp tr,table.resp td{display:block;width:100%}
+  table.resp tr{padding:10px 12px;border-bottom:1px solid var(--line)}
+  table.resp td{border:0;padding:2px 0}
+  table.resp td[data-l]::before{content:attr(data-l) ' · ';color:var(--muted);font-size:12px}
+  table.resp td.hide-m{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>PTW & LOTO – Observation Tracker</h1>
+      <div class="sub">Nhập audit · Nhật ký observation · KPI 2026</div>
+    </div>
+    <div class="grow"></div>
+    <div class="save-st" id="saveSt"><span class="dot"></span><span id="saveTx">Đang tải…</span></div>
+    <button class="btn sm" data-act="theme" title="Đổi giao diện sáng/tối">Sáng / Tối</button>
+  </header>
+  <nav class="tabs" id="tabs">
+    <button data-tab="kpi">Tổng quan KPI</button>
+    <button data-tab="obs">Nhật ký Observation</button>
+    <button data-tab="audit">Audit checklist</button>
+    <button data-tab="plan">Kế hoạch 2026</button>
+    <button data-tab="data">Nhập / Xuất dữ liệu</button>
+  </nav>
+  <main id="main"></main>
+</div>
+<div id="modal"><div class="box" id="modalBox"></div></div>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>
+const SEED = {"records": [{"id": "s000", "date": "2026-03-04", "item": "PTW&LOTO audit", "title": "The safety warning tape fell during work execution. (PTW No. 29706)", "desc": "The safety warning tape fell during work execution due to improper securing, resulting in unclear area demarcation and potential unauthorized access."}, {"id": "s001", "date": "2026-03-04", "item": "PTW&LOTO audit", "title": "Electrical cable laid on the floor creating a trip hazard and risk of damage to electrical equipment. (PTW No. 32693)", "desc": "Electrical cable was laid on the floor without proper protection or routing, creating a trip hazard for personnel and increasing the risk of cable damage and potential electrical hazards."}, {"id": "s002", "date": "2026-03-04", "item": "PTW&LOTO audit", "title": "Paint container placed without a spill containment tray. (PTW No. 32686)", "desc": "Paint container was placed without a spill containment tray, increasing the risk of leakage, environmental contamination, and slip hazards."}, {"id": "s003", "date": "2026-03-05", "item": "PTW&LOTO audit", "title": "Missing LOTO point (PTW No. 31477)", "desc": "Missing LOTO point, resulting in incomplete isolation and potential exposure to hazardous energy."}, {"id": "s004", "date": "2026-03-10", "item": "PTW&LOTO audit", "title": "PA and HSE Engineer signed the Confined Space Certificate before conducting gas testing. (PTW No. 31617)", "desc": "PA and HSE Engineer signed the Confined Space Certificate before conducting gas testing, indicating non-compliance with the confined space procedure. This may lead to entry into an unsafe atmosphere (e.g., low oxygen or presence of toxic/flammable gases), posing serious risk to personnel."}, {"id": "s005", "date": "2026-03-10", "item": "PTW&LOTO audit", "title": "PA and HSE Engineer signed the Confined Space Certificate before conducting gas testing. (PTW No. 31624)", "desc": "PA and HSE Engineer signed the Confined Space Certificate before conducting gas testing, indicating non-compliance with the confined space procedure. This may lead to entry into an unsafe atmosphere (e.g., low oxygen or presence of toxic/flammable gases), posing serious risk to personnel."}, {"id": "s006", "date": "2026-03-17", "item": "PTW&LOTO audit", "title": "Not finished Pre job briefing form (PTW No.31980)", "desc": "Pre-Job Briefing Form was not completed before work execution, indicating non-compliance with procedure and increasing the risk of unclear hazards, controls, and miscommunication among workers."}, {"id": "s007", "date": "2026-03-20", "item": "PTW&LOTO audit", "title": "Regular inspection Roots Blower (No. 3) for Ash Silo (3 months) (PTW No.31980)", "desc": "Good action"}, {"id": "s008", "date": "2026-03-20", "item": "PTW&LOTO audit", "title": "Inspect the strainer for FF system at TT5, TT10, Coal control building, CYWWTS building (PTW No.31948)", "desc": "Good action"}, {"id": "s009", "date": "2026-04-17", "item": "PTW&LOTO audit", "title": "Poor housekeeping and missing safety warning tape at work area (PTW No. 31386)", "desc": "The work area was not properly organized, creating potential hazards. No safety warning tape was installed to isolate the working zone during touch-up painting activities at coal transport area."}, {"id": "s010", "date": "2026-04-17", "item": "PTW&LOTO audit", "title": "Incomplete entry log form before starting work (PTW No. 32960)", "desc": "The entry/exit log form was not fully completed and signed before performing maintenance work on CCWP 1A at Unit 1 Steam Turbine Building."}, {"id": "s011", "date": "2026-04-16", "item": "PTW&LOTO audit", "title": "Check the lighting of TT12 (PTW No.32653)", "desc": "Good action"}, {"id": "s012", "date": "2026-04-21", "item": "PTW&LOTO audit", "title": "Work conducted without PTW and improper spill control during painting (PTW No.32806)", "desc": "Painting work on CO₂ and CH₄ cabinets was carried out without a valid Permit to Work (PTW) at the site. In addition, no spill containment or floor protection was provided, creating a risk of paint leakage and contamination."}, {"id": "s013", "date": "2026-04-21", "item": "PTW&LOTO audit", "title": "Incomplete documentation and incorrect lifting information (PTW No. 33065)", "desc": "Personnel information was not fully recorded in the pre-job briefing and entry log before starting the work. Additionally, incorrect load details were provided in the lifting certificate during silencer installation at FGD Electrical Building."}, {"id": "s014", "date": "2026-04-24", "item": "PTW&LOTO audit", "title": "Inspection and filling holes on outside lighting T5 & T7 (PTW No.33269)", "desc": "Good action"}, {"id": "s015", "date": "2026-04-24", "item": "PTW&LOTO audit", "title": "Replace the lining plate of BC-1A/B to BC-2A/B.", "desc": "Electrical equipment had not been inspected prior to use. The work area was not properly organized, leading to poor housekeeping conditions."}, {"id": "s016", "date": "2026-04-15", "item": "PTW&LOTO audit", "title": "Check the lighting of TT12 (PTW No.32653)", "desc": "The crew sign on/off form was not fully completed before and after the work activities."}, {"id": "s017", "date": "2026-04-11", "item": "PTW&LOTO audit", "title": "Checking lifting motor of T10 crane (PTW No.32530)", "desc": "Personal protective equipment was not worn correctly in accordance with safety requirements during work activities."}, {"id": "s018", "date": "2026-03-31", "item": "PTW&LOTO audit", "title": "Replace Fire Detector module 10CYE11 MO069-S01 GE- HOUSING TURBINE BUILDING #1 (PTW No. 32198)", "desc": "The pre-job briefing form was not fully completed before starting the work activities."}, {"id": "s019", "date": "2026-03-28", "item": "PTW&LOTO audit", "title": "Inspection and maintenance for ESP Unit 1( PTW No. 32268)", "desc": "The pre-job briefing form was not fully completed before starting the work activities."}, {"id": "s020", "date": "2026-04-13", "item": "PTW&LOTO audit", "title": "Replace the lining plate for TT1 ( ceramix & hardox) (PTW No. 32798)", "desc": "Workers did not wear protective gloves when starting the work activities, posing a risk of hand injury."}, {"id": "s021", "date": "2026-04-14", "item": "PTW&LOTO audit", "title": "Checking lifting motor of T10 crane (PTW No.32530)", "desc": "Good action"}, {"id": "s022", "date": "2026-07-04", "item": "PTW&LOTO audit", "title": "U1: PULVERIZER B HIGH VIBRATION WHEN STOP (Inspection inside) ( PTW No.35338)", "desc": "Good action"}, {"id": "s023", "date": "2026-07-07", "item": "PTW&LOTO audit", "title": "Regular inspection for Ignitor B1-B5 Unit2 (3 month)", "desc": "Good action"}, {"id": "s024", "date": "2026-07-17", "item": "PTW&LOTO audit", "title": "Install the new secondary smart belt cleaner for  BC-13B (PTW No.35965)", "desc": "Good action"}, {"id": "s025", "date": "2026-07-21", "item": "PTW&LOTO audit", "title": "Replace the lining plate of chute BC-14B to BC-15B (PTW No.36311)", "desc": "Wet floor area with heavy coal and dust accumulation"}, {"id": "s026", "date": "2026-07-23", "item": "PTW&LOTO audit", "title": "The high mast lighting D/P 4 at coal yard are damaged. Please check and repair. (PTW No.36407)", "desc": "Good action"}, {"id": "s027", "date": "2026-07-27", "item": "PTW&LOTO audit", "title": "Install the temporary oil purifier for Unit 1 Main lube  oil tank (PTW No.36483)", "desc": "Removing the LOTO valve to install a temporary oil filte, severe violation of LOTO principles."}, {"id": "s028", "date": "2026-07-29", "item": "PTW&LOTO audit", "title": "Seawater booster pump No.1 motor solo run (PTW No. 36405)", "desc": "Housekeeping after completing the work was not carried out properly"}, {"id": "s029", "date": "2026-07-30", "item": "PTW&LOTO audit", "title": "Regulation inspection 3000-4000 hous", "desc": "Workers didn't use glove when working. Lack of ventilation"}, {"id": "s030", "date": "2026-08-11", "item": "PTW&LOTO audit", "title": "WO 38199 Replace the lining plate of tail chute TT5", "desc": "Good action, but the Confined Space Certificate needs to be extended to include more row in the Gas Testing Part"}, {"id": "s031", "date": "2026-08-11", "item": "PTW&LOTO audit", "title": "WO 37999 Painting electric panel", "desc": "Good action and well housekeeping"}, {"id": "s032", "date": "2026-08-12", "item": "PTW&LOTO audit", "title": "WO 38396 Inspection & re-alignment coupling for Condensate Booster Pump CBP 2B-U2", "desc": "Crew members did not wear proper PPE ( earplug)"}, {"id": "s033", "date": "2026-08-12", "item": "PTW&LOTO audit", "title": "WO 37881 Repair the leaking of BA jetting Pump Valves , Tag No.36-39 ( Unit 2)", "desc": "Crew members did not wear proper PPE ( gloves)"}, {"id": "s034", "date": "2026-08-12", "item": "PTW&LOTO audit", "title": "WO38482 Prepair the floating barrier", "desc": "Good action"}, {"id": "s035", "date": "2026-08-17", "item": "PTW&LOTO audit", "title": "WO 38481 Replace pipe for Coagulant Pump B (CYWWT)", "desc": "Good action"}, {"id": "s036", "date": "2026-08-17", "item": "PTW&LOTO audit", "title": "WO38253 MMF & ACF Replacement Work in PBlock WWT", "desc": "A submersible pump was found in use, but its periodic inspection status could not be verified."}, {"id": "s037", "date": "2026-08-17", "item": "PTW&LOTO audit", "title": "WO38188 Regular maintenance, inspection and cleaning for CO/CH4 Sampling system Unit#2 ( Calibration,Replace sensor CO )", "desc": "Good action"}, {"id": "s038", "date": "2026-08-20", "item": "PTW&LOTO audit", "title": "WO38695 Replace Oil Seal for No. 5 Pulley – SCC Unit 2", "desc": "The work area is not well-ventilated, and the electrical cables are not elevated, creating a safety hazard."}, {"id": "s039", "date": "2026-08-20", "item": "PTW&LOTO audit", "title": "WO38569 PAF 2A shaft alignment (Vibration occurs occasionally)", "desc": "The safety warning tape fell during work execution due to improper securing, resulting in unclear area demarcation and potential unauthorized access."}, {"id": "s040", "date": "2026-08-21", "item": "PTW&LOTO audit", "title": "Replace Oil Seal for No. 5 Pulley – SCC Unit 2", "desc": "Work tools are not properly organized"}, {"id": "s041", "date": "2026-08-21", "item": "PTW&LOTO audit", "title": "MMF & ACF Replacement Work in PBlock WWT", "desc": "Good action"}, {"id": "s042", "date": "2026-08-21", "item": "PTW&LOTO audit", "title": "Inspect cable of the MOV Outlet damper IDF 2A with CTCI Unit 2", "desc": "Crew members did not wear proper PPE ( gloves)"}, {"id": "s043", "date": "2026-08-22", "item": "PTW&LOTO audit", "title": "WO 38696 Inspection and maintenance for ESP Unit 2", "desc": "Crew members did not wear proper PPE ( mask) and the ventilation fan is missing the quarterly safety inspection tag."}, {"id": "s044", "date": "2026-08-22", "item": "PTW&LOTO audit", "title": "WO 38668 Inspection inside ESP Unit 2", "desc": "Good action"}, {"id": "s045", "date": "2026-08-22", "item": "PTW&LOTO audit", "title": "WO 38893 Replace lining plate for BC-8B chute", "desc": "A crew member was working inside a  confine space without signing on the\\ Confine space certificate."}, {"id": "s046", "date": "2026-08-22", "item": "PTW&LOTO audit", "title": "WO 38656 Clean the HV bushing of  GSUT2  .(TR-AIS)", "desc": "Crew members were working while the ICC have not yet verified zero energy."}, {"id": "s047", "date": "2026-08-23", "item": "PTW&LOTO audit", "title": "Maintenance works for T-BFP 2B", "desc": "Crew members did not wear proper PPE ( gloves)"}, {"id": "s048", "date": "2026-08-25", "item": "PTW&LOTO audit", "title": "WO 38969 Inspectionthe Ash Water Mixer Silo 2 (gear box, bearing, blade)", "desc": "Good action"}, {"id": "s049", "date": "2026-08-27", "item": "PTW&LOTO audit", "title": "WO 38518 replace bearing of MMF Backwash Pump B motor", "desc": "The permit has been extended, but the PA failed to update the date on the equipment's LOTO tag."}, {"id": "s050", "date": "2026-08-27", "item": "PTW&LOTO audit", "title": "wo 39101 Inspection the reject transfer Pump", "desc": "The tag lacks the name of the person performing LOTO and the execution date."}, {"id": "s051", "date": "2026-09-08", "item": "PTW&LOTO audit", "title": "Wo 39620 Maintenance works for T-BFP 2B", "desc": "The tag lacks the name of the person performing LOTO and the execution date."}, {"id": "s052", "date": "2026-09-09", "item": "PTW&LOTO audit", "title": "Check the wastewater sump pump B at TT12", "desc": "Good action"}, {"id": "s053", "date": "2026-09-09", "item": "PTW&LOTO audit", "title": "Wo 39676 repair the MS-8B", "desc": "Crew members did not wear proper PPE ( mask) and The barrier at the entrance area is too low."}, {"id": "s054", "date": "2026-09-09", "item": "PTW&LOTO audit", "title": "WO 39733 Repair the casing of BATC", "desc": "The barrier did not cover the whole working area"}, {"id": "s055", "date": "2026-09-10", "item": "PTW&LOTO audit", "title": "WO 37441 Warehouse building construction at Oil Storage Area", "desc": "The worker did not use proper PPE( face mask) when welding and the barricades fell down."}, {"id": "s056", "date": "2026-09-10", "item": "PTW&LOTO audit", "title": "WO 38943 Purifying for lube oil of IDF 2A", "desc": "At the time of inspection, no PTWwas displayed and the chemical was not placed in the spill container tray."}, {"id": "s057", "date": "2026-09-14", "item": "PTW&LOTO audit", "title": "WO39443 Repair lighting high mast No.2 in Coal Yard", "desc": "N o valid PTW is available at worksite"}, {"id": "s058", "date": "2026-09-15", "item": "PTW&LOTO audit", "title": "WO 39620 Maintenance for T-BFP 2B", "desc": "A bottle of liquid soap was found near the work area without chemical lable"}, {"id": "s059", "date": "2026-09-15", "item": "PTW&LOTO audit", "title": "WO 39917 Repair and repaint Rusty Lighting Boxes - ATS", "desc": "Good action"}, {"id": "s060", "date": "2026-09-15", "item": "PTW&LOTO audit", "title": "WO: 40051 The outlet pressure of the Boiler Chemical WW Pumps A U2 is low (<110 kPa)", "desc": "No valid PTW was available, and the Permit Applicant was absent from the working area during the inspection."}, {"id": "s061", "date": "2026-09-16", "item": "PTW&LOTO audit", "title": "WO40051 The outlet pressure of the Boiler Chemical WW Pumps A U2 is low (<110 kPa)", "desc": "Good action"}, {"id": "s062", "date": "2026-09-17", "item": "PTW&LOTO audit", "title": "WO40113 Replace bearings of BWRO Transfer Pump B motor", "desc": "Good action"}, {"id": "s063", "date": "2026-09-18", "item": "PTW&LOTO audit", "title": "WO 40116 Repair ò ECO Fly Ash Pipe Due to Ash Leakage", "desc": "Workers were observed working on a scaffold without a valid scaffold inspection green card."}, {"id": "s064", "date": "2026-09-18", "item": "PTW&LOTO audit", "title": "WO 40113 Replace bearing of BWRO Transfer Pump B motor", "desc": "The hand winch has no safety inspection and the hook safety latch was not properly closed"}, {"id": "s065", "date": "2026-09-24", "item": "PTW&LOTO audit", "title": "WO  40348 Inspection and cleaning of the TT12 sump pump.", "desc": "Lack of signage for the crew member on Enter/Exit Confine Space Form."}, {"id": "s066", "date": "2026-09-24", "item": "PTW&LOTO audit", "title": "WO 39754 CCB Elevator Monthly Maintenance", "desc": "Good Action"}], "plan": {"Observation": [30, 28, 37, 33, 26, 41, 29, 29, 32, 114, 112, 40], "Lesson Learned": [17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17], "PTW&LOTO audit": [11, 7, 13, 13, 10, 8, 12, 13, 12, 12, 13, 14], "Near miss": [22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22]}, "audits": [{"id": "a-37441", "date": "2026-10-09", "time": "10:38", "area": "LUBRICANT OIL STORE", "ptw": "37441", "job": "Warehouse building construction at Oil storage area", "inspector": "Quoc Thai", "items": {"1": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "2": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "3": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "4": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "5": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "6": {"r": "no", "finding": "The worker did not use proper PPE( face mask) when welding.", "action": "", "evidence": "", "remark": "", "photos": []}, "7": {"r": "no", "finding": "The barricades fell down", "action": "", "evidence": "", "remark": "", "photos": []}, "8": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "9": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "10": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "11": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "12": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "13": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "14": {"r": "na", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "15": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "16": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "17": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "18": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "19": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}, "20": {"r": "yes", "finding": "", "action": "", "evidence": "", "remark": "", "photos": []}}, "recId": null}]};
+const ITEMS = ['Observation','Lesson Learned','PTW&LOTO audit','Near miss'];
+const KPI_ITEM = 'PTW&LOTO audit'; // KPI chỉ tính cho hạng mục này (theo yêu cầu)
+const MON = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
+const CHECKS = [
+['Valid PTW is available at worksite','PTW hợp lệ có sẵn tại hiện trường'],
+['PTW scope matches actual work activity','Phạm vi PTW phù hợp với công việc thực tế'],
+['Required approvals/signatures completed','Đã hoàn tất phê duyệt/chữ ký yêu cầu'],
+['Toolbox meeting conducted before work','Đã thực hiện họp công cụ trước công việc'],
+['Workers understand PTW conditions and hazards','Người lao động hiểu điều kiện PTW và mối nguy'],
+['Correct PPE is used by all personnel','Tất cả nhân sự sử dụng đúng PPE'],
+['Barricade and warning signs installed properly','Rào chắn và biển cảnh báo được lắp đặt phù hợp'],
+['Worksite housekeeping is acceptable','Hiện trường được duy trì vệ sinh gọn gàng'],
+['LOTO applied according to ICC/Isolation plan','LOTO được thực hiện đúng theo ICC/Kế hoạch cô lập'],
+['Lock, tag, and isolation points are correctly installed','Khóa, thẻ và điểm cô lập được lắp đặt đúng'],
+['LOTO devices are in good condition','Thiết bị LOTO ở tình trạng tốt'],
+['Zero Energy Verification (ZEV) completed and recorded','Đã xác nhận và ghi nhận năng lượng bằng không'],
+['No unauthorized bypass/removal of LOTO','Không có việc bypass/tháo LOTO trái phép'],
+['Gas test conducted (if required)','Đã kiểm tra khí (nếu yêu cầu)'],
+['Fire prevention measures available (if required)','Biện pháp PCCC đầy đủ (nếu yêu cầu)'],
+['Emergency access and escape routes clear','Lối tiếp cận và thoát hiểm thông thoáng'],
+['Work complies with PTW conditions','Công việc tuân thủ điều kiện PTW'],
+['Unsafe conditions/actions corrected immediately','Điều kiện/hành vi không an toàn được xử lý ngay'],
+['Communication between Operation and Maintenance effective','Phối hợp giữa Vận hành và Bảo trì hiệu quả'],
+['Overall worksite condition acceptable for safe work','Điều kiện hiện trường đáp ứng làm việc an toàn']
+];
+
+/* ---------- utils ---------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const esc = s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const p2 = n=>String(n).padStart(2,'0');
+const uid = ()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
+const today = ()=>{const d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())};
+const nowHM = ()=>{const d=new Date();return p2(d.getHours())+':'+p2(d.getMinutes())};
+const fmt = iso=>iso?iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4):'';
+const serial = iso=>Math.round((Date.UTC(+iso.slice(0,4),+iso.slice(5,7)-1,+iso.slice(8,10))-Date.UTC(1899,11,30))/864e5);
+const fromSerial = n=>new Date(Date.UTC(1899,11,30)+Math.round(n)*864e5).toISOString().slice(0,10);
+function parseDate(v){
+  if(v==null||v==='') return null;
+  if(v instanceof Date) return v.getFullYear()+'-'+p2(v.getMonth()+1)+'-'+p2(v.getDate());
+  if(typeof v==='number') return (v>20000&&v<80000)?fromSerial(v):null;
+  const s=String(v).trim(); let m;
+  if(/^\d{5}$/.test(s)) return fromSerial(+s);
+  if((m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/))) return m[3]+'-'+p2(m[2])+'-'+p2(m[1]);
+  if((m=s.match(/^(\d{4})-(\d{2})-(\d{2})/))) return m[0];
+  return null;
+}
+const normItem = s=>ITEMS.find(i=>i.toLowerCase()===String(s||'').trim().toLowerCase())||null;
+const isGood = r=>/^good action/i.test((r.desc||'').trim());
+const monthName = k=>'Th'+(+k.slice(5,7))+'/'+k.slice(0,4);
+
+/* ---------- persistence (IndexedDB) ---------- */
+let idb=null, S=null, saveTimer=null, persistOK=false;
+function openDB(){return new Promise(res=>{try{const r=indexedDB.open('ptw-loto-tracker',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);r.onblocked=()=>res(null)}catch(e){res(null)}})}
+function kvGet(k){return new Promise(res=>{if(!idb)return res(null);try{const q=idb.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)}catch(e){res(null)}})}
+function kvSet(k,v){return new Promise(res=>{if(!idb)return res(false);try{const t=idb.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res(true);t.onerror=()=>res(false);t.onabort=()=>res(false)}catch(e){res(false)}})}
+function setStatus(ok,txt){$('#saveTx').textContent=txt;$('.dot').style.background=ok?'var(--good)':'var(--warn)'}
+function saveSoon(){clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{const ok=await kvSet('state',S);persistOK=ok;setStatus(ok,ok?'Đã lưu trên trình duyệt '+nowHM():'Không lưu được – hãy xuất bản sao lưu JSON')},300)}
+function seedState(){
+  return {v:2,asOf:'2026-09-25',cycleDay:26,records:SEED.records.map(r=>({...r,item:KPI_ITEM})),plan:JSON.parse(JSON.stringify(SEED.plan)),remarks:{},audits:SEED.audits||[],lastInspector:'Quoc Thai',areas:['LUBRICANT OIL STORE']};
+}
+function normalizeState(s){
+  s.records=s.records||[];s.audits=s.audits||[];s.remarks=s.remarks||{};s.areas=s.areas||[];
+  s.plan=s.plan||{};ITEMS.forEach(i=>{if(!Array.isArray(s.plan[i]))s.plan[i]=Array(12).fill(0)});
+  s.cycleDay=(+s.cycleDay>=1&&+s.cycleDay<=28)?+s.cycleDay:26; // ngày chốt kỳ KPI hằng tháng (mặc định 26 -> chốt 25)
+  s.asOf=s.asOf||today();return s;
+}
+
+/* ---------- UI helpers ---------- */
+let toastT;
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2600)}
+function openModal(html,wide){$('#modalBox').className='box'+(wide?' wide':'');$('#modalBox').innerHTML=html;$('#modal').classList.add('on')}
+function closeModal(){$('#modal').classList.remove('on');$('#modalBox').innerHTML=''}
+function confirmBox(msg,ok='Xác nhận',danger=true){return new Promise(res=>{
+  openModal(`<h3>${esc(msg)}</h3><div class="row-btn"><button class="btn" id="cbNo">Huỷ</button><button class="btn ${danger?'pri danger':'pri'}" id="cbYes" ${danger?'style="background:var(--bad);border-color:var(--bad);color:#fff"':''}>${esc(ok)}</button></div>`);
+  $('#cbNo').onclick=()=>{closeModal();res(false)};$('#cbYes').onclick=()=>{closeModal();res(true)};
+})}
+async function saveFile(filename,data){
+  let dl=null;try{if(window.claude&&claude.use)dl=await claude.use('downloads')}catch(e){}
+  if(dl){try{await dl.save({filename,data});toast('Đã lưu '+filename)}catch(e){if(e&&e.code!=='declined')toast('Không lưu được file ('+(e.code||'lỗi')+')')}return}
+  try{const b=new Blob([data]);const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast('Đã tạo '+filename)}catch(e){toast('Trình duyệt không cho phép tải file')}
+}
+
+/* ---------- KPI logic ---------- */
+function periodStart(a=S.asOf){
+  const sd=S.cycleDay,y=+a.slice(0,4),m=+a.slice(5,7),d=+a.slice(8,10);
+  if(sd<=1)return a.slice(0,7)+'-01';
+  if(d>=sd)return y+'-'+p2(m)+'-'+p2(sd);
+  const pm=m===1?12:m-1,py=m===1?y-1:y;return py+'-'+p2(pm)+'-'+p2(sd);
+}
+// Kỳ KPI tháng gắn với mốc chốt: nếu ngày hiện tại (asOf) đã qua mốc chốt (>= cycleDay), kỳ tính là tháng kế tiếp trên Bảng kế hoạch.
+function planMonthIndex(a=S.asOf){const m=+a.slice(5,7)-1,d=+a.slice(8,10);return (S.cycleDay>1&&d>=S.cycleDay)?(m+1)%12:m}
+// Quy 1 ngày bất kỳ (VD ngày của 1 observation/audit) về đúng {năm,tháng} KPI mà nó thuộc về, theo cùng quy tắc chốt kỳ ở trên.
+function cycleTarget(dateStr){
+  const yy=+dateStr.slice(0,4),mm=+dateStr.slice(5,7)-1,dd=+dateStr.slice(8,10);
+  if(S.cycleDay<=1)return {y:yy,m:mm};
+  if(dd>=S.cycleDay){const nm=(mm+1)%12,ny=mm===11?yy+1:yy;return {y:ny,m:nm}}
+  return {y:yy,m:mm};
+}
+const cnt=(from,to)=>S.records.filter(r=>r.item===KPI_ITEM&&r.date>=from&&r.date<=to).length;
+const sumArr=a=>a.reduce((x,y)=>x+(+y||0),0);
+function kpiRow(){
+  const a=S.asOf,y=a.slice(0,4),mi=planMonthIndex(a),ys=y+'-01-01',plan=S.plan[KPI_ITEM];
+  const tm=+plan[mi]||0,am=cnt(periodStart(a),a);
+  const ty=sumArr(plan.slice(0,mi+1)),ay=cnt(ys,a);
+  return {it:KPI_ITEM,mi,tm,am,ty,ay};
+}
+const pct=(a,t)=>t?a/t*100:null;
+function pbar(p){if(p==null)return '<span class="muted">–</span>';return `<div style="display:flex;gap:8px;align-items:center"><div class="pb" style="flex:1"><i class="${p>=100?'full':''}" style="width:${Math.min(100,p)}%"></i></div><span class="num" style="min-width:44px;text-align:right">${p.toFixed(1)}%</span></div>`}
+function chartSVG(){
+  const y=+S.asOf.slice(0,4),plan=S.plan[KPI_ITEM].map(v=>+v||0),act=Array(12).fill(0);
+  S.records.forEach(r=>{if(r.item!==KPI_ITEM)return;const t=cycleTarget(r.date);if(t.y===y)act[t.m]++});
+  const mx=Math.max(1,...plan,...act),W=720,H=240,L=38,B=26,T=14,cw=(W-L-6)/12,ph=H-B-T;
+  const Y=v=>T+ph-(v/mx)*ph;let g='';
+  for(let i=0;i<=4;i++){const v=Math.round(mx*i/4);g+=`<line x1="${L}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`}
+  for(let i=0;i<12;i++){
+    const x=L+i*cw+cw*.14,w=cw*.72;
+    g+=`<rect x="${x}" y="${Y(plan[i])}" width="${w}" height="${T+ph-Y(plan[i])}" rx="3" fill="var(--plan)"/>`;
+    if(act[i]>0)g+=`<rect x="${x+w*.22}" y="${Y(act[i])}" width="${w*.56}" height="${T+ph-Y(act[i])}" rx="3" fill="var(--accent)"/><text x="${x+w/2}" y="${Y(act[i])-4}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">${act[i]}</text>`;
+    g+=`<text x="${x+w/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${MON[i]}</text>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Biểu đồ kế hoạch và thực tế theo tháng">${g}</svg>`;
+}
+
+/* ---------- tabs ---------- */
+let tab='kpi';
+const F={q:'',m:'',st:''};
+let auditMode='list', D=null;
+function render(){
+  $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  $('#main').innerHTML=({kpi:vKPI,obs:vObs,audit:vAudit,plan:vPlan,data:vData})[tab]();
+  if(tab==='obs')obsBody();
+  window.scrollTo(0,0);
+}
+
+/* KPI — chỉ tính cho hạng mục PTW&LOTO audit */
+function vKPI(){
+  const R=kpiRow(),a=S.asOf,ps=periodStart(a);
+  const au=S.records.filter(r=>r.item===KPI_ITEM&&r.date>=ps&&r.date<=a);
+  const fnd=au.filter(r=>!isGood(r)).length;
+  const mp=pct(R.am,R.tm),yp=pct(R.ay,R.ty);
+  return `
+  <div class="bar-row"><div><label style="margin:0">Tính đến ngày (Input date)</label></div>
+    <input type="date" data-asof value="${a}" style="width:auto"><button class="btn sm" data-act="asof-today">Hôm nay</button>
+    <span class="muted small">Kỳ KPI tháng: ${fmt(ps)} – ${fmt(a)} (chốt ngày ${S.cycleDay-1} hằng tháng)</span></div>
+  <div class="grid g4" style="margin-bottom:16px">
+    <div class="card stat"><div class="k">Tháng này – ${esc(KPI_ITEM)}</div><div class="v">${R.am} <small>/ ${R.tm}</small></div><div class="s">${mp==null?'Chưa có kế hoạch':mp.toFixed(1)+'% kế hoạch tháng'}</div></div>
+    <div class="card stat"><div class="k">Lũy kế năm (YTD)</div><div class="v">${R.ay} <small>/ ${R.ty}</small></div><div class="s">${yp==null?'–':yp.toFixed(1)+'% kế hoạch lũy kế'}</div></div>
+    <div class="card stat"><div class="k">Audit PTW & LOTO trong kỳ</div><div class="v">${au.length}</div><div class="s">${fnd} có phát hiện · ${au.length-fnd} good action</div></div>
+    <div class="card stat"><div class="k">Tổng dòng nhật ký</div><div class="v">${S.records.length}</div><div class="s">${S.audits.length} phiếu audit chi tiết</div></div>
+  </div>
+  <div class="card" style="margin-bottom:16px"><div class="pad" style="padding-bottom:6px"><h2>Bảng 1 – Tiến độ KPI kỳ ${MON[R.mi]}</h2><div class="muted small">Kỳ chốt ngày ${S.cycleDay-1}: từ ${fmt(ps)} đến ${fmt(a)}. Số thực tế đếm tự động từ Nhật ký Observation.</div></div>
+    <div class="tw"><table class="tbl"><thead><tr><th>Hạng mục KPI</th><th class="num">Mục tiêu</th><th class="num">Đã đạt</th><th>% đạt</th><th>Ghi chú</th></tr></thead><tbody>
+    <tr><td><b>${esc(KPI_ITEM)}</b></td><td class="num">${R.tm}</td><td class="num">${R.am}</td><td style="min-width:150px">${pbar(mp)}</td><td><input class="cell rm" data-remark="m" value="${esc(S.remarks.m||'')}" placeholder="Ghi chú / hành động"></td></tr>
+    </tbody></table></div></div>
+  <div class="card" style="margin-bottom:16px"><div class="pad" style="padding-bottom:6px"><h2>Bảng 2 – Tiến độ KPI lũy kế (YTD) đến ${MON[R.mi]}</h2></div>
+    <div class="tw"><table class="tbl"><thead><tr><th>Hạng mục KPI</th><th class="num">Mục tiêu YTD</th><th class="num">Đã đạt YTD</th><th>% đạt</th><th>Ghi chú</th></tr></thead><tbody>
+    <tr><td><b>${esc(KPI_ITEM)}</b></td><td class="num">${R.ty}</td><td class="num">${R.ay}</td><td style="min-width:150px">${pbar(yp)}</td><td><input class="cell rm" data-remark="y" value="${esc(S.remarks.y||'')}" placeholder="Ghi chú / hành động"></td></tr>
+    </tbody></table></div></div>
+  <div class="card pad"><h2 style="margin:0 0 10px">Kế hoạch vs thực tế theo tháng – ${esc(KPI_ITEM)}</h2>
+    <div id="chartBox">${chartSVG()}</div>
+    <div class="legend"><span><i style="background:var(--plan)"></i>Kế hoạch</span><span><i style="background:var(--accent)"></i>Thực tế</span></div></div>`;
+}
+
+/* Observation log */
+function filtered(){
+  const q=F.q.trim().toLowerCase();
+  return S.records.filter(r=>(!F.m||r.date.slice(0,7)===F.m)&&(!F.st||(F.st==='good'?isGood(r):!isGood(r)))&&(!q||(r.title+' '+r.desc).toLowerCase().includes(q))).sort((a,b)=>b.date.localeCompare(a.date)||0);
+}
+function vObs(){
+  const months=[...new Set(S.records.map(r=>r.date.slice(0,7)))].sort().reverse();
+  return `<div class="bar-row muted small" style="margin-bottom:8px">Nhật ký chỉ ghi nhận hạng mục KPI <b>${esc(KPI_ITEM)}</b>.</div>
+  <div class="bar-row">
+    <input type="search" data-filter="q" placeholder="Tìm theo WO / PTW / nội dung…" value="${esc(F.q)}">
+    <select data-filter="m"><option value="">Mọi tháng</option>${months.map(m=>`<option value="${m}" ${F.m===m?'selected':''}>${monthName(m)}</option>`).join('')}</select>
+    <select data-filter="st"><option value="">Tất cả</option><option value="bad" ${F.st==='bad'?'selected':''}>Có phát hiện</option><option value="good" ${F.st==='good'?'selected':''}>Good action</option></select>
+  </div>
+  <div class="bar-row"><button class="btn pri" data-act="rec-add">+ Thêm dòng</button><button class="btn" data-act="rec-paste">Dán từ Excel</button><button class="btn" data-act="obs-export">Xuất Excel (đang lọc)</button><div class="grow"></div><span class="muted small" id="obsCount"></span></div>
+  <div class="card"><div class="tw"><table class="tbl resp"><thead><tr><th>#</th><th>Ngày</th><th>Tiêu đề (WO / PTW)</th><th>Mô tả</th><th></th></tr></thead><tbody id="obsBody"></tbody></table></div></div>`;
+}
+function obsBody(){
+  const list=filtered(),el=$('#obsBody');if(!el)return;
+  $('#obsCount').textContent=list.length+' / '+S.records.length+' dòng';
+  el.innerHTML=list.length?list.map((r,i)=>`<tr>
+    <td class="hide-m muted num">${list.length-i}</td>
+    <td data-l="Ngày" style="white-space:nowrap">${fmt(r.date)}</td>
+    <td data-l="Tiêu đề" style="min-width:220px"><b style="font-weight:500">${esc(r.title)}</b>${r.auditId?' <span class="tag" title="Tạo từ phiếu audit">audit</span>':''}</td>
+    <td data-l="Mô tả" style="min-width:260px">${isGood(r)?`<span class="tag good">Good action</span> ${esc(r.desc.replace(/^good action[,.]?\s*/i,''))}`:esc(r.desc)||'<span class="muted">—</span>'}</td>
+    <td><div class="acts"><button class="btn sm" data-act="rec-edit" data-id="${r.id}">Sửa</button><button class="btn sm danger" data-act="rec-del" data-id="${r.id}">Xoá</button></div></td></tr>`).join(''):`<tr><td colspan="5"><div class="empty">Không có dòng nào khớp bộ lọc.</div></td></tr>`;
+}
+function recModal(id){
+  const r=id?S.records.find(x=>x.id===id):{date:today(),title:'',desc:''};
+  openModal(`<h3>${id?'Sửa dòng observation':'Thêm dòng observation'}</h3><p class="muted small" style="margin-top:-4px">Hạng mục KPI: <b>${esc(KPI_ITEM)}</b></p>
+  <div class="fld"><label>Ngày</label><input type="date" id="mDate" value="${r.date}"></div>
+  <div class="fld"><label>Tiêu đề (WO / PTW / công việc)</label><input id="mTitle" value="${esc(r.title)}" placeholder="VD: WO 39620 Maintenance for T-BFP 2B"></div>
+  <div class="fld"><label>Mô tả phát hiện <button class="btn sm" style="margin-left:8px" data-act="fill-good">Điền "Good action"</button></label><textarea id="mDesc" rows="4">${esc(r.desc)}</textarea></div>
+  <div class="row-btn"><button class="btn" data-act="modal-close">Huỷ</button><button class="btn pri" data-act="rec-save" data-id="${id||''}">Lưu</button></div>`);
+  setTimeout(()=>$('#mTitle')&&$('#mTitle').focus(),50);
+}
+function saveRec(id){
+  const date=$('#mDate').value,title=$('#mTitle').value.trim(),desc=$('#mDesc').value.trim();
+  if(!date||!title){toast('Cần nhập ngày và tiêu đề');return}
+  if(id){const r=S.records.find(x=>x.id===id);Object.assign(r,{date,item:KPI_ITEM,title,desc})}else S.records.push({id:uid(),date,item:KPI_ITEM,title,desc});
+  saveSoon();closeModal();render();toast('Đã lưu');
+}
+function tsvParse(t){
+  const rows=[];let row=[],cur='',q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+    else if(c==='"'&&cur==='')q=true;
+    else if(c==='\t'){row.push(cur);cur=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(cur);rows.push(row);row=[];cur=''}
+    else cur+=c;}
+  if(cur!==''||row.length){row.push(cur);rows.push(row)}
+  return rows.filter(r=>r.some(x=>x.trim()));
+}
+function rowsToRecords(rows){
+  const out=[];
+  rows.forEach(c=>{
+    c=c.map(x=>String(x==null?'':x).trim());
+    let s=-1,d=parseDate(c[0]);
+    if(d)s=0;else if((d=parseDate(c[1])))s=1;
+    if(s<0)return;
+    const rest=c.slice(s+1),it=normItem(rest[0]);
+    const title=it?rest[1]||'':rest[0]||'',desc=it?rest[2]||'':rest[1]||'';
+    if(!title&&!desc)return;
+    out.push({id:uid(),date:d,item:KPI_ITEM,title,desc});
+  });
+  return out;
+}
+const keyOf=r=>[r.date,r.title.toLowerCase(),(r.desc||'').toLowerCase()].join('|');
+function mergeRecords(list){
+  const have=new Set(S.records.map(keyOf));let n=0;
+  list.forEach(r=>{if(!have.has(keyOf(r))){S.records.push(r);have.add(keyOf(r));n++}});
+  return n;
+}
+function pasteModal(){
+  openModal(`<h3>Dán dữ liệu từ Excel</h3><p class="muted small" style="margin-top:0">Chọn các ô trong Excel rồi Ctrl+C và dán vào đây. Cột theo thứ tự: <b>Ngày · (Item) · Tiêu đề · Mô tả</b> (cột "NO." ở đầu có cũng được; cột Item nếu có sẽ bị bỏ qua vì mọi dòng đều tính là "${esc(KPI_ITEM)}"). Dòng trùng sẽ được bỏ qua.</p>
+  <textarea id="pasteBox" rows="9" placeholder="15/09/2026&#9;PTW&LOTO audit&#9;WO 39620 Maintenance…&#9;Good action"></textarea>
+  <div class="muted small" id="pasteInfo" style="margin-top:6px"></div>
+  <div class="row-btn"><button class="btn" data-act="modal-close">Huỷ</button><button class="btn pri" data-act="paste-go">Nhập</button></div>`,true);
+  $('#pasteBox').addEventListener('input',()=>{$('#pasteInfo').textContent='Nhận diện được '+rowsToRecords(tsvParse($('#pasteBox').value)).length+' dòng hợp lệ'});
+}
+
+/* Audit */
+function vAudit(){return auditMode==='form'?vAuditForm():vAuditList()}
+function auditStats(a){let y=0,n=0,na=0;for(let i=1;i<=20;i++){const r=a.items[i]&&a.items[i].r;if(r==='yes')y++;else if(r==='no')n++;else if(r==='na')na++}return{y,n,na}}
+function vAuditList(){
+  const list=[...S.audits].sort((a,b)=>(b.updatedAt||Date.parse(b.date+'T'+(b.time||'00:00')))-(a.updatedAt||Date.parse(a.date+'T'+(a.time||'00:00'))));
+  return `<div class="bar-row"><button class="btn pri" data-act="aud-new">+ Audit mới</button><span class="muted small">Mỗi phiếu audit khi lưu sẽ tự tạo/cập nhật 1 dòng trong Nhật ký Observation.</span></div>
+  <div class="card">${list.length?`<div class="tw"><table class="tbl resp"><thead><tr><th>Ngày</th><th>Khu vực</th><th>PTW</th><th>Công việc</th><th>Người đánh giá</th><th>Kết quả</th><th></th></tr></thead><tbody>${list.map(a=>{const s=auditStats(a);return `<tr>
+    <td data-l="Ngày" style="white-space:nowrap">${fmt(a.date)} ${esc(a.time||'')}</td><td data-l="Khu vực">${esc(a.area)}</td><td data-l="PTW">${esc(a.ptw)}</td><td data-l="Công việc" style="min-width:200px">${esc(a.job)}</td><td data-l="Người đánh giá">${esc(a.inspector)}</td>
+    <td data-l="Kết quả"><span class="tag good">${s.y} Yes</span> <span class="tag ${s.n?'bad':''}">${s.n} No</span> <span class="tag">${s.na} N/A</span></td>
+    <td><div class="acts"><button class="btn sm" data-act="aud-edit" data-id="${a.id}">Mở</button><button class="btn sm" data-act="aud-xlsx" data-id="${a.id}">Excel</button><button class="btn sm danger" data-act="aud-del" data-id="${a.id}">Xoá</button></div></td></tr>`}).join('')}</tbody></table></div>`:`<div class="empty">Chưa có phiếu audit nào. Bấm "Audit mới" để bắt đầu.</div>`}</div>`;
+}
+function newDraft(a){
+  const d=a?JSON.parse(JSON.stringify(a)):{id:uid(),date:today(),time:nowHM(),area:'',ptw:'',job:'',inspector:S.lastInspector||'',items:{},recId:null};
+  for(let n=1;n<=20;n++)d.items[n]=Object.assign({r:'',finding:'',action:'',evidence:'',remark:'',photos:[],open:false},d.items[n]||{});
+  d.makeRec=true;d.recTitleManual=false;d.recDescManual=false;
+  if(a&&a.recId){const r=S.records.find(x=>x.id===a.recId);if(r){d.recTitle=r.title;d.recDesc=r.desc;d.recTitleManual=true;d.recDescManual=true}}
+  D=d;autoRec();return d;
+}
+function genRecTitle(){return (D.ptw?('WO '+D.ptw+' '):'')+D.job.trim()}
+function genRecDesc(){
+  const f=[];for(let n=1;n<=20;n++){const it=D.items[n];if(it.r==='no'){let t=(it.finding||'').trim()||CHECKS[n-1][0];if(!/[.!?]$/.test(t))t+='.';f.push(t)}}
+  const answered=Object.values(D.items).every(i=>i.r);
+  return f.length?f.join(' '):(answered?'Good action':'');
+}
+function autoRec(){
+  if(!D.recTitleManual){D.recTitle=genRecTitle();const e=$('#recTitle');if(e)e.value=D.recTitle}
+  if(!D.recDescManual){D.recDesc=genRecDesc();const e=$('#recDesc');if(e)e.value=D.recDesc}
+}
+function rowHTML(n){
+  const it=D.items[n],[en,vi]=CHECKS[n-1],show=it.r==='no'||it.open||it.finding||it.action||it.evidence||it.remark||it.photos.length;
+  const b=(v,l)=>`<button type="button" data-act="res" data-n="${n}" data-v="${v}" class="${v} ${it.r===v?'on':''}" aria-pressed="${it.r===v}">${l}</button>`;
+  return `<div class="chk ${it.r?'r-'+it.r:''}" id="row-${n}">
+    <div class="chk-top"><span class="num">${n}</span><div class="txt"><div class="en">${esc(en)}</div><div class="vi">${esc(vi)}</div></div>
+    <div class="seg" role="group" aria-label="Kết quả mục ${n}">${b('yes','Yes')}${b('no','No')}${b('na','N/A')}</div></div>
+    ${show?`<div class="detail">
+      <div class="grid g2"><div><label>Phát hiện / Finding ${it.r==='no'?'<b style="color:var(--bad)">*</b>':''}</label><textarea data-f="finding" data-n="${n}" rows="2">${esc(it.finding)}</textarea></div>
+      <div><label>Hành động khắc phục / Corrective action</label><textarea data-f="action" data-n="${n}" rows="2">${esc(it.action)}</textarea></div>
+      <div><label>Bằng chứng / Evidence</label><input data-f="evidence" data-n="${n}" value="${esc(it.evidence)}"></div>
+      <div><label>Ghi chú / Remark</label><input data-f="remark" data-n="${n}" value="${esc(it.remark)}"></div></div>
+      <div class="photos">${it.photos.map((p,i)=>`<div class="ph" data-act="photo-view" data-n="${n}" data-i="${i}"><img src="${p}" alt="Ảnh ${i+1}"><b data-act="photo-del" data-n="${n}" data-i="${i}" title="Xoá ảnh">×</b></div>`).join('')}
+        <label class="btn sm" style="margin:0;cursor:pointer;color:var(--ink)">+ Ảnh<input type="file" accept="image/*" multiple hidden data-photo="${n}"></label></div>
+    </div>`:`<div style="margin-top:6px"><button type="button" class="btn sm" data-act="open-detail" data-n="${n}" style="border-style:dashed;color:var(--muted)">+ Ghi chú / ảnh</button></div>`}
+  </div>`;
+}
+function summaryChips(){const s=auditStats(D),left=20-s.y-s.n-s.na;return `<span class="tag good">${s.y} Yes</span><span class="tag ${s.n?'bad':''}">${s.n} No</span><span class="tag">${s.na} N/A</span><span class="tag ${left?'warn':'good'}">${left?'Còn '+left+' mục chưa chọn':'Đã chọn đủ 20 mục'}</span>`}
+function vAuditForm(){
+  const dl=[...new Set(S.areas)].map(a=>`<option value="${esc(a)}">`).join('');
+  return `<div class="card pad" style="margin-bottom:14px"><h2>LOTO/PTW Daily Inspection Checklist <span class="muted" style="font-weight:400">· Checklist Kiểm Tra Hàng Ngày LOTO/PTW</span></h2>
+    <div class="grid g3" style="margin-top:12px">
+      <div><label>Ngày / Date</label><input type="date" data-h="date" value="${D.date}"></div>
+      <div><label>Thời gian / Time</label><input type="time" data-h="time" value="${esc(D.time)}"></div>
+      <div><label>Khu vực – Tổ máy / Area – Unit</label><input data-h="area" list="areas" value="${esc(D.area)}" placeholder="VD: LUBRICANT OIL STORE"><datalist id="areas">${dl}</datalist></div>
+      <div><label>Số PTW / PTW No.</label><input data-h="ptw" value="${esc(D.ptw)}" inputmode="numeric" placeholder="37441"></div>
+      <div style="grid-column:span 2"><label>Mô tả công việc / Job description</label><input data-h="job" value="${esc(D.job)}" placeholder="Warehouse building construction at Oil storage area"></div>
+      <div><label>Người đánh giá / Inspector</label><input data-h="inspector" value="${esc(D.inspector)}"></div>
+    </div></div>
+  <div class="bar-row"><button class="btn" data-act="all-yes">Đặt tất cả chưa chọn = Yes</button><div class="chips" id="chips">${summaryChips()}</div></div>
+  <div id="checks">${Array.from({length:20},(_,i)=>rowHTML(i+1)).join('')}</div>
+  <div class="card pad" style="margin-top:14px"><div class="bar-row" style="margin-bottom:6px"><h2 style="margin:0">Dòng sẽ ghi vào Nhật ký Observation</h2><div class="grow"></div><button class="btn sm" data-act="rec-regen">↻ Tạo lại tự động</button></div>
+    <label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:13.5px;margin-bottom:10px"><input type="checkbox" data-h="makeRec" ${D.makeRec?'checked':''} style="width:auto"> Tạo / cập nhật dòng Observation khi lưu (Item: PTW&LOTO audit)</label>
+    <div class="grid g2"><div><label>Tiêu đề</label><input id="recTitle" data-h="recTitle" value="${esc(D.recTitle)}"></div><div><label>Mô tả (các mục "No" được gộp tự động)</label><textarea id="recDesc" data-h="recDesc" rows="2">${esc(D.recDesc)}</textarea></div></div></div>
+  <div class="sticky"><div class="in"><button class="btn pri" data-act="aud-save">Lưu audit</button><button class="btn" data-act="aud-cancel">Đóng</button><button class="btn" data-act="aud-xlsx-draft">Xuất Excel phiếu này</button></div></div>`;
+}
+function refreshRow(n){const e=$('#row-'+n);if(e){e.outerHTML=rowHTML(n)}$('#chips').innerHTML=summaryChips();autoRec()}
+function compress(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{const M=1100,k=Math.min(1,M/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};im.src=fr.result};fr.readAsDataURL(file)})}
+function saveAudit(){
+  if(!D.date||!D.job.trim()){toast('Cần nhập Ngày và Mô tả công việc');return}
+  for(let n=1;n<=20;n++){if(!D.items[n].r){toast('Mục '+n+' chưa chọn Yes / No / N/A');$('#row-'+n).classList.add('err');$('#row-'+n).scrollIntoView({block:'center',behavior:'smooth'});return}}
+  for(let n=1;n<=20;n++){if(D.items[n].r==='no'&&!D.items[n].finding.trim()){toast('Mục '+n+' chọn "No" – cần mô tả phát hiện');$('#row-'+n).classList.add('err');$('#row-'+n).scrollIntoView({block:'center',behavior:'smooth'});return}}
+  const a=JSON.parse(JSON.stringify(D));
+  ['makeRec','recTitle','recDesc','recTitleManual','recDescManual'].forEach(k=>delete a[k]);
+  Object.values(a.items).forEach(i=>delete i.open);
+  a.updatedAt=Date.now(); // dấu thời gian lưu thực tế, dùng để sắp xếp "vừa audit xong lên đầu"
+  let rec=D.recId&&S.records.find(r=>r.id===D.recId);
+  if(D.makeRec){
+    if(!D.recTitle.trim()){toast('Cần nhập tiêu đề cho dòng Observation');return}
+    if(rec)Object.assign(rec,{date:D.date,item:KPI_ITEM,title:D.recTitle.trim(),desc:D.recDesc.trim()});
+    else{rec={id:uid(),date:D.date,item:KPI_ITEM,title:D.recTitle.trim(),desc:D.recDesc.trim(),auditId:a.id};S.records.push(rec)}
+    a.recId=rec.id;rec.auditId=a.id;
+  }
+  const i=S.audits.findIndex(x=>x.id===a.id);if(i>=0)S.audits[i]=a;else S.audits.push(a);
+  S.lastInspector=a.inspector;if(a.area&&!S.areas.includes(a.area))S.areas.push(a.area);
+  saveSoon();auditMode='list';D=null;render();toast(D===null&&a.recId?'Đã lưu audit và cập nhật nhật ký':'Đã lưu audit');
+}
+
+/* Plan — chỉ hiển thị mục tiêu của KPI_ITEM */
+function vPlan(){
+  let c=0;
+  const rows=S.plan[KPI_ITEM].map((v,i)=>{c+=(+v||0);return `<td class="num" id="pc-${i}">${c}</td>`}).join('');
+  return `<div class="card"><div class="pad" style="padding-bottom:6px"><h2>Bảng 4 – Kế hoạch 2026 · ${esc(KPI_ITEM)}</h2><div class="muted small">Sửa trực tiếp các ô số lượng theo tháng. Đây là hạng mục KPI duy nhất được theo dõi.</div></div>
+  <div class="tw"><table class="tbl"><thead><tr><th>Hạng mục</th>${MON.map(m=>`<th class="num">${m}</th>`).join('')}<th class="num">Tổng</th></tr></thead><tbody>
+  <tr><td><b>${esc(KPI_ITEM)}</b></td>${S.plan[KPI_ITEM].map((v,i)=>`<td class="num"><input class="cell" type="number" min="0" data-plan="1" data-m="${i}" value="${v}" style="width:66px;text-align:right"></td>`).join('')}<td class="num" id="ps-0"><b>${sumArr(S.plan[KPI_ITEM])}</b></td></tr>
+  </tbody><tfoot><tr><td>Lũy kế</td>${rows}<td></td></tr></tfoot></table></div></div>
+  <div class="card pad" style="margin-top:16px"><h2>Chu kỳ tính KPI hằng tháng</h2><p class="muted small" style="margin:2px 0 10px">Ngày bắt đầu kỳ tính. Mặc định <b>26</b> = kỳ chạy từ ngày 26 tháng trước đến ngày 25 tháng này (KPI chốt vào ngày 25 hằng tháng). Đặt <b>1</b> nếu muốn tính theo tháng dương lịch.</p>
+  <div style="max-width:220px"><label>Ngày bắt đầu kỳ</label><input type="number" min="1" max="28" data-cycleday value="${S.cycleDay}"></div></div>`;
+}
+function refreshPlanSums(){
+  const e=$('#ps-0');if(e)e.innerHTML='<b>'+sumArr(S.plan[KPI_ITEM])+'</b>';
+  let c=0;S.plan[KPI_ITEM].forEach((v,i)=>{c+=(+v||0);const b=$('#pc-'+i);if(b)b.textContent=c});
+}
+
+/* Data */
+function vData(){
+  return `<div class="grid g2">
+  <div class="card pad"><h2>Nhập dữ liệu</h2><p class="muted small" style="margin-top:2px">Nhận file <b>.xlsx / .xls / .csv</b> (tự tìm bảng có cột Date – Item – Title – Description, ví dụ sheet "3.Observation Record") hoặc file sao lưu <b>.json</b>.</p>
+    <div class="drop" id="drop"><div style="margin-bottom:10px">Kéo thả file vào đây</div><label class="btn pri" style="cursor:pointer">Chọn file<input type="file" id="impFile" accept=".xlsx,.xls,.csv,.json" hidden></label></div>
+    <div class="row-btn" style="justify-content:flex-start"><button class="btn" data-act="rec-paste">Dán từ Excel</button></div></div>
+  <div class="card pad"><h2>Xuất dữ liệu</h2><p class="muted small" style="margin-top:2px">File Excel gồm 3 sheet: <b>Observation Record</b>, <b>KPI</b> (Bảng 1, 2, 4), <b>Audit Details</b> — đã kẻ ô, canh giữa các cột số, bôi đen/tô nền tiêu đề.</p>
+    <div class="row-btn" style="justify-content:flex-start"><button class="btn pri" data-act="exp-all">Xuất Excel đầy đủ</button><button class="btn" data-act="exp-json">Sao lưu JSON</button></div>
+    <p class="muted small">Xuất từng phiếu audit theo mẫu song ngữ: tab <b>Audit checklist</b> → nút "Excel".</p></div>
+  <div class="card pad" style="grid-column:1/-1"><h2>Lưu trữ & bảo mật dữ liệu</h2><p class="muted small" style="margin:2px 0 10px">Dữ liệu được lưu ngay trên trình duyệt của bạn (không gửi lên máy chủ), nên mỗi người / mỗi thiết bị có bản riêng. Hãy <b>sao lưu JSON</b> định kỳ và dùng "Nhập" để chuyển sang máy khác.</p>
+    <div class="row-btn" style="justify-content:flex-start"><button class="btn" data-act="load-seed">Nạp lại dữ liệu mẫu từ file gốc</button><button class="btn danger" data-act="reset">Xoá toàn bộ dữ liệu</button></div></div></div>`;
+}
+/* ---- Xuất Excel có định dạng (ExcelJS): kẻ ô, canh lề/giữa, bôi đen tiêu đề ---- */
+const XB={style:'thin',color:{argb:'FFB9C2BC'}};
+const XBORD={top:XB,left:XB,bottom:XB,right:XB};
+const XHDR_FILL={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F6B54'}};
+function styleHeader(row){row.eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'},size:11};c.fill=XHDR_FILL;c.alignment={vertical:'middle',horizontal:'center',wrapText:true};c.border=XBORD});row.height=22}
+function styleData(row,center=[]){row.eachCell((c,n)=>{c.border=XBORD;c.alignment={vertical:'middle',horizontal:center.includes(n)?'center':'left',wrapText:true}})}
+function styleTitle(row,cols){row.getCell(1).font={bold:true,size:13};row.getCell(1).alignment={vertical:'middle'}}
+
+function obsSheet(wb,list){
+  const ws=wb.addWorksheet('Observation Record');
+  ws.columns=[{header:'NO.',key:'no',width:6},{header:'Date',key:'date',width:12},{header:'Item',key:'item',width:17},{header:'Title (WO / PTW)',key:'title',width:55},{header:'Description / Finding',key:'desc',width:80}];
+  styleHeader(ws.getRow(1));
+  [...list].sort((a,b)=>a.date.localeCompare(b.date)).forEach((r,i)=>{
+    const row=ws.addRow({no:i+1,date:new Date(r.date+'T00:00:00'),item:r.item,title:r.title,desc:r.desc});
+    row.getCell('date').numFmt='dd/mm/yyyy';styleData(row,[1,2,3]);
+    if(isGood(r))row.getCell('desc').font={color:{argb:'FF187A4B'}};
+  });
+  ws.views=[{state:'frozen',ySplit:1}];return ws;
+}
+function kpiSheet(wb){
+  const R=kpiRow(),a=S.asOf,ps=periodStart(a),ws=wb.addWorksheet('KPI');
+  ws.columns=[{width:24},{width:14},{width:14},{width:16},{width:32}];
+  const t=ws.addRow(['Observation KPI Tracking – '+KPI_ITEM]);ws.mergeCells(`A${t.number}:E${t.number}`);styleTitle(t);
+  ws.addRow(['Tính đến ngày (Input date)',fmt(a)]).getCell(1).font={bold:true};
+  ws.addRow(['Kỳ KPI tháng (chốt ngày '+(S.cycleDay-1)+')',fmt(ps)+' – '+fmt(a)]).getCell(1).font={bold:true};
+  ws.addRow([]);
+  const h1=ws.addRow(['Bảng 1 – Tiến độ KPI tháng '+MON[R.mi]]);ws.mergeCells(`A${h1.number}:E${h1.number}`);styleTitle(h1);
+  styleHeader(ws.addRow(['KPI Item','Target','Achieved','% Achievement','Remark']));
+  const d1=ws.addRow([KPI_ITEM,R.tm,R.am,R.tm?+(R.am/R.tm*100).toFixed(1):0,S.remarks.m||'']);styleData(d1,[2,3,4]);d1.getCell(4).numFmt='0.0"%"';
+  ws.addRow([]);
+  const h2=ws.addRow(['Bảng 2 – Tiến độ KPI lũy kế (YTD) đến '+MON[R.mi]]);ws.mergeCells(`A${h2.number}:E${h2.number}`);styleTitle(h2);
+  styleHeader(ws.addRow(['KPI Item','Target YTD','Achieved YTD','% Achievement','Remark']));
+  const d2=ws.addRow([KPI_ITEM,R.ty,R.ay,R.ty?+(R.ay/R.ty*100).toFixed(1):0,S.remarks.y||'']);styleData(d2,[2,3,4]);d2.getCell(4).numFmt='0.0"%"';
+  ws.addRow([]);
+  const h3=ws.addRow(['Bảng 4 – Kế hoạch 2026']);ws.mergeCells(`A${h3.number}:E${h3.number}`);styleTitle(h3);
+  styleHeader(ws.addRow(['Plan',...MON,'Sum']));
+  const d3=ws.addRow([KPI_ITEM,...S.plan[KPI_ITEM],sumArr(S.plan[KPI_ITEM])]);styleData(d3,[2,3,4,5,6,7,8,9,10,11,12,13,14]);
+  return ws;
+}
+/* Nhúng ảnh audit vào ô Excel (thumbnail xếp dọc trong ô), trả về ghi chú "+N ảnh khác" nếu vượt cap */
+function addPhotoThumbs(wb,ws,photos,row,colIdx,cap){
+  photos=photos||[];if(!photos.length)return '';
+  const shown=photos.slice(0,cap),extra=photos.length-shown.length;
+  const W=64,H=46,GAP=4,n=shown.length,pad=extra>0?16:6;
+  const totalPx=n*H+(n-1)*GAP+pad;
+  row.height=Math.max(row.height||0,totalPx*0.75);
+  shown.forEach((p,i)=>{
+    const m=/^data:image\/(\w+);base64,/.exec(p);if(!m)return;
+    try{
+      const imgId=wb.addImage({base64:p,extension:m[1]==='jpg'?'jpeg':m[1]});
+      ws.addImage(imgId,{tl:{col:colIdx+0.08,row:(row.number-1)+(i*(H+GAP))/totalPx},ext:{width:W,height:H}});
+    }catch(e){}
+  });
+  return extra>0?('+'+extra+' ảnh khác'):'';
+}
+function auditFlatSheet(wb){
+  const ws=wb.addWorksheet('Audit Details');
+  ws.columns=[{header:'Date',key:'date',width:12},{header:'Time',key:'time',width:8},{header:'Area/Unit',key:'area',width:20},{header:'PTW No.',key:'ptw',width:10},{header:'Job description',key:'job',width:40},{header:'Inspector',key:'inspector',width:16},{header:'No.',key:'no',width:5},{header:'Inspection item',key:'itemtxt',width:45},{header:'Result',key:'result',width:9},{header:'Finding',key:'finding',width:36},{header:'Corrective action',key:'action',width:32},{header:'Evidence',key:'evidence',width:20},{header:'Remark',key:'remark',width:20},{header:'Photos',key:'photos',width:12}];
+  styleHeader(ws.getRow(1));
+  [...S.audits].sort((a,b)=>a.date.localeCompare(b.date)).forEach(a=>{for(let n=1;n<=20;n++){const it=a.items[n]||{};
+    const row=ws.addRow({date:new Date(a.date+'T00:00:00'),time:a.time,area:a.area,ptw:a.ptw,job:a.job,inspector:a.inspector,no:n,itemtxt:CHECKS[n-1][0],result:({yes:'Yes',no:'No',na:'N/A'})[it.r]||'',finding:it.finding||'',action:it.action||'',evidence:it.evidence||'',remark:it.remark||'',photos:''});
+    row.getCell('date').numFmt='dd/mm/yyyy';styleData(row,[1,2,4,7,9,14]);
+    if(it.r==='no')row.getCell('result').font={bold:true,color:{argb:'FFB42318'}};
+    else if(it.r==='yes')row.getCell('result').font={color:{argb:'FF187A4B'}};
+    const extraTxt=addPhotoThumbs(wb,ws,it.photos,row,13,4);
+    if(extraTxt){row.getCell('photos').value=extraTxt;row.getCell('photos').font={size:9,italic:true,color:{argb:'FF5F6C66'}};row.getCell('photos').alignment={vertical:'bottom',horizontal:'center',wrapText:true}}
+  }});
+  ws.views=[{state:'frozen',ySplit:1}];return ws;
+}
+async function exportAll(){
+  const wb=new ExcelJS.Workbook();wb.creator='PTW & LOTO Tracker';wb.created=new Date();
+  obsSheet(wb,S.records);kpiSheet(wb);auditFlatSheet(wb);
+  saveFile('PTW_LOTO_Observation_'+today()+'.xlsx',await wb.xlsx.writeBuffer());
+}
+function auditFormSheet(wb,a){
+  const ws=wb.addWorksheet('Checklist');
+  ws.columns=[{width:6},{width:50},{width:6},{width:6},{width:6},{width:36},{width:14},{width:32},{width:20},{width:20}];
+  const r1=ws.addRow(['LOTO/PTW Daily Inspection Checklist']);ws.mergeCells(`A${r1.number}:J${r1.number}`);r1.getCell(1).font={bold:true,size:14};r1.getCell(1).alignment={horizontal:'center'};r1.height=22;
+  const r2=ws.addRow(['Checklist Kiểm Tra Hàng Ngày LOTO/PTW']);ws.mergeCells(`A${r2.number}:J${r2.number}`);r2.getCell(1).font={italic:true,size:11};r2.getCell(1).alignment={horizontal:'center'};
+  [['Date/Ngày:',fmt(a.date)],['Time/ Thời gian:',a.time||''],['Area / Unit/ Khu vực / Tổ máy:',a.area],['PTW No./ Số PTW:',a.ptw],['Job Description/ Mô tả công việc:',a.job],['Inspector/ Người đánh giá:',a.inspector]]
+    .forEach(([lab,val])=>{const row=ws.addRow([lab,'',val]);ws.mergeCells(`A${row.number}:B${row.number}`);ws.mergeCells(`C${row.number}:J${row.number}`);row.getCell(1).font={bold:true};row.eachCell(c=>{c.border=XBORD;c.alignment={vertical:'middle',wrapText:true}})});
+  const hA=ws.addRow(['No.','Inspection Item','Yes','No','N/A','Finding','Photo','Corrective Action','Evidence','Remark']);
+  const hB=ws.addRow(['STT','Danh mục kiểm tra','','','','Phát hiện','Hình ảnh','Hành động khắc phục','Bằng chứng','Ghi chú']);
+  [hA,hB].forEach(styleHeader);
+  [1,3,4,5,7].forEach(c=>ws.mergeCells(hA.number,c,hB.number,c));
+  for(let n=1;n<=20;n++){
+    const it=a.items[n]||{};
+    const rowA=ws.addRow([n,CHECKS[n-1][0],it.r==='yes'?'x':'',it.r==='no'?'x':'',it.r==='na'?'x':'',it.finding||'','',it.action||'',it.evidence||'',it.remark||'']);
+    const rowB=ws.addRow(['',CHECKS[n-1][1],'','','','','','','','']);
+    [1,3,4,5,6,7,8,9,10].forEach(c=>ws.mergeCells(rowA.number,c,rowB.number,c));
+    [rowA,rowB].forEach(r=>r.eachCell(c=>{c.border=XBORD;c.alignment={vertical:'middle',wrapText:true}}));
+    [1,3,4,5].forEach(c=>rowA.getCell(c).alignment={vertical:'middle',horizontal:'center'});
+    if(it.r==='no'){rowA.getCell(4).font={bold:true,color:{argb:'FFB42318'}};rowA.eachCell(c=>c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFDE8E6'}})}
+    else if(it.r==='yes')rowA.getCell(3).font={bold:true,color:{argb:'FF187A4B'}};
+    rowB.getCell(2).font={italic:true,size:10,color:{argb:'FF5F6C66'}};
+    const extraTxt=addPhotoThumbs(wb,ws,it.photos,rowA,6,6);
+    if(extraTxt){rowA.getCell(7).value=extraTxt;rowA.getCell(7).font={size:9,italic:true,color:{argb:'FF5F6C66'}};rowA.getCell(7).alignment={vertical:'bottom',horizontal:'center',wrapText:true}}
+  }
+  ws.views=[{state:'frozen',ySplit:hB.number}];return ws;
+}
+async function exportAudit(a){
+  const wb=new ExcelJS.Workbook();auditFormSheet(wb,a);
+  saveFile('PTW_LOTO_Audit_'+(a.ptw||'WO')+'_'+a.date+'.xlsx',await wb.xlsx.writeBuffer());
+}
+
+/* Import */
+function askImport(list,label){
+  if(!list.length){toast('Không tìm thấy dòng hợp lệ trong '+label);return}
+  const have=new Set(S.records.map(keyOf)),fresh=list.filter(r=>!have.has(keyOf(r))).length;
+  window._imp=list;
+  openModal(`<h3>Nhập từ "${esc(label)}"</h3><p>Tìm thấy <b>${list.length}</b> dòng, trong đó <b>${fresh}</b> dòng mới (chưa có trong nhật ký).</p>
+  <div class="row-btn"><button class="btn" data-act="modal-close">Huỷ</button><button class="btn" data-act="imp-replace">Thay thế toàn bộ nhật ký</button><button class="btn pri" data-act="imp-merge">Thêm ${fresh} dòng mới</button></div>`);
+}
+async function handleFile(f){
+  if(!f)return;const name=f.name;
+  try{
+    if(/\.json$/i.test(name)){
+      const j=JSON.parse(await f.text());
+      if(!j||!Array.isArray(j.records)){toast('File JSON không đúng định dạng');return}
+      if(await confirmBox('Khôi phục sao lưu sẽ thay thế toàn bộ dữ liệu hiện tại. Tiếp tục?','Khôi phục')){S=normalizeState(j);saveSoon();render();toast('Đã khôi phục sao lưu')}
+      return;
+    }
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'}),out=[];
+    wb.SheetNames.forEach(sn=>{
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:''});
+      let hi=-1,ci={};
+      for(let i=0;i<Math.min(rows.length,40);i++){
+        const low=rows[i].map(x=>String(x).trim().toLowerCase());
+        if(low.includes('date')&&(low.includes('title')||low.includes('description'))){hi=i;ci={date:low.indexOf('date'),item:low.indexOf('item'),title:low.indexOf('title'),desc:low.indexOf('description')};break}
+      }
+      if(hi<0)return;
+      for(let i=hi+1;i<rows.length;i++){
+        const r=rows[i],d=parseDate(r[ci.date]);if(!d)continue;
+        const title=String(ci.title>=0?r[ci.title]:'').trim(),desc=String(ci.desc>=0?r[ci.desc]:'').trim();
+        if(!title&&!desc)continue;
+        out.push({id:uid(),date:d,item:KPI_ITEM,title,desc});
+      }
+    });
+    askImport(out,name);
+  }catch(e){toast('Không đọc được file: '+(e.message||'lỗi'))}
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('[data-tab]');if(t&&t.closest('#tabs')){tab=t.dataset.tab;if(tab!=='audit'){auditMode='list';D=null}render();return}
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const act=el.dataset.act,id=el.dataset.id,n=el.dataset.n;
+  switch(act){
+    case 'theme':{const r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=dark?'light':'dark';break}
+    case 'modal-close':closeModal();break;
+    case 'asof-today':S.asOf=today();saveSoon();render();break;
+    case 'rec-add':recModal();break;
+    case 'rec-edit':recModal(id);break;
+    case 'rec-save':saveRec(id);break;
+    case 'fill-good':$('#mDesc').value='Good action';break;
+    case 'rec-del':if(await confirmBox('Xoá dòng observation này?','Xoá')){const r=S.records.find(x=>x.id===id);S.records=S.records.filter(x=>x.id!==id);if(r&&r.auditId){const a=S.audits.find(x=>x.id===r.auditId);if(a)a.recId=null}saveSoon();obsBody();toast('Đã xoá')}break;
+    case 'rec-paste':pasteModal();break;
+    case 'paste-go':{const l=rowsToRecords(tsvParse($('#pasteBox').value));if(!l.length){toast('Không nhận diện được dòng nào');break}const k=mergeRecords(l);saveSoon();closeModal();render();toast('Đã thêm '+k+' dòng mới'+(k<l.length?' ('+(l.length-k)+' dòng trùng bị bỏ qua)':''));break}
+    case 'obs-export':{const l=filtered();if(!l.length){toast('Không có dòng nào để xuất');break}const wb=new ExcelJS.Workbook();obsSheet(wb,l);saveFile('Observation_Record_'+(F.m||'all')+'.xlsx',await wb.xlsx.writeBuffer());break}
+    case 'aud-new':auditMode='form';newDraft();render();break;
+    case 'aud-edit':auditMode='form';newDraft(S.audits.find(x=>x.id===id));render();break;
+    case 'aud-cancel':if(await confirmBox('Đóng phiếu? Các thay đổi chưa lưu sẽ mất.','Đóng phiếu')){auditMode='list';D=null;render()}break;
+    case 'aud-save':saveAudit();break;
+    case 'aud-del':if(await confirmBox('Xoá phiếu audit này (và dòng observation liên kết)?','Xoá')){const a=S.audits.find(x=>x.id===id);if(a&&a.recId)S.records=S.records.filter(r=>r.id!==a.recId);S.audits=S.audits.filter(x=>x.id!==id);saveSoon();render();toast('Đã xoá')}break;
+    case 'aud-xlsx':await exportAudit(S.audits.find(x=>x.id===id));break;
+    case 'aud-xlsx-draft':await exportAudit(D);break;
+    case 'res':{const it=D.items[n];it.r=it.r===el.dataset.v?'':el.dataset.v;refreshRow(n);break}
+    case 'open-detail':D.items[n].open=true;refreshRow(n);break;
+    case 'all-yes':for(let i=1;i<=20;i++)if(!D.items[i].r)D.items[i].r='yes';$('#checks').innerHTML=Array.from({length:20},(_,i)=>rowHTML(i+1)).join('');$('#chips').innerHTML=summaryChips();autoRec();break;
+    case 'rec-regen':D.recTitleManual=D.recDescManual=false;autoRec();break;
+    case 'photo-del':e.stopPropagation();D.items[n].photos.splice(+el.dataset.i,1);refreshRow(n);break;
+    case 'photo-view':openModal(`<img class="big" src="${D.items[n].photos[+el.dataset.i]}" alt="Ảnh hiện trường"><div class="row-btn"><button class="btn" data-act="modal-close">Đóng</button></div>`);break;
+    case 'exp-all':await exportAll();break;
+    case 'exp-json':saveFile('PTW_LOTO_backup_'+today()+'.json',JSON.stringify(S));break;
+    case 'imp-merge':{const k=mergeRecords(window._imp||[]);saveSoon();closeModal();render();toast('Đã thêm '+k+' dòng mới');break}
+    case 'imp-replace':S.records=window._imp||[];saveSoon();closeModal();render();toast('Đã thay thế nhật ký ('+S.records.length+' dòng)');break;
+    case 'load-seed':if(await confirmBox('Nạp lại dữ liệu mẫu sẽ thay thế toàn bộ dữ liệu hiện tại. Tiếp tục?','Nạp lại')){S=seedState();saveSoon();render();toast('Đã nạp dữ liệu mẫu')}break;
+    case 'reset':if(await confirmBox('Xoá toàn bộ nhật ký, audit và ảnh? Không thể hoàn tác.','Xoá tất cả')){S=normalizeState({records:[],audits:[],plan:S.plan,asOf:today()});saveSoon();render();toast('Đã xoá dữ liệu')}break;
+  }
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.filter){F[t.dataset.filter]=t.value;obsBody();return}
+  if(t.dataset.asof!==undefined){if(t.value){S.asOf=t.value;saveSoon();render()}return}
+  if(t.dataset.cycleday){S.cycleDay=Math.min(28,Math.max(1,Math.round(+t.value)||1));saveSoon();render();return}
+  if(t.dataset.remark){S.remarks[t.dataset.remark]=t.value;saveSoon();return}
+  if(t.dataset.plan){S.plan[KPI_ITEM][+t.dataset.m]=Math.max(0,+t.value||0);refreshPlanSums();saveSoon();return}
+  if(!D)return;
+  if(t.dataset.f){D.items[t.dataset.n][t.dataset.f]=t.value;if(t.dataset.f==='finding')autoRec();return}
+  if(t.dataset.h){
+    const k=t.dataset.h;
+    if(k==='makeRec'){D.makeRec=t.checked;return}
+    D[k]=t.value;
+    if(k==='recTitle')D.recTitleManual=true;else if(k==='recDesc')D.recDescManual=true;else if(k==='ptw'||k==='job')autoRec();
+  }
+});
+document.addEventListener('change',async e=>{
+  const t=e.target;
+  if(t.id==='impFile'){handleFile(t.files[0]);t.value='';return}
+  if(t.dataset.photo&&D){
+    const n=t.dataset.photo;
+    for(const f of [...t.files]){try{D.items[n].photos.push(await compress(f))}catch(err){toast('Không đọc được ảnh')}}
+    refreshRow(n);
+  }
+});
+document.addEventListener('dragover',e=>{const d=e.target.closest('#drop');if(d){e.preventDefault();d.classList.add('over')}});
+document.addEventListener('dragleave',e=>{const d=e.target.closest('#drop');if(d)d.classList.remove('over')});
+document.addEventListener('drop',e=>{const d=e.target.closest('#drop');if(d){e.preventDefault();d.classList.remove('over');handleFile(e.dataTransfer.files[0])}});
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+/* ---------- boot ---------- */
+(async function(){
+  idb=await openDB();
+  const saved=await kvGet('state');
+  S=saved?normalizeState(saved):seedState();
+  S.asOf=today(); // luôn mở app với "Tính đến ngày" = hôm nay, để observation/audit mới nhất luôn được tính đúng kỳ KPI hiện tại
+  persistOK=!!idb;
+  setStatus(persistOK,persistOK?(saved?'Đã tải dữ liệu đã lưu':'Đã nạp dữ liệu mẫu từ file gốc'):'Chưa lưu được trên trình duyệt – hãy xuất JSON');
+  if(!saved)saveSoon();
+  render();
+})();
+</script>
+</body>
+</html>
